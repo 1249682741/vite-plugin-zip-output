@@ -1,5 +1,5 @@
 {
-  "name": "vite-plugin-zip",
+  "name": "vite-plugin-zip-output",
   "version": "0.0.1",
   "description": "a vite plugin to compress output folder to zip",
   "author": "pikachu",
@@ -25,7 +25,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/1249682741/vite-plugin-zip.git"
+    "url": "https://github.com/1249682741/vite-plugin-zip-output.git"
   },
   "engines": {
     "node": "^14.18.0 || >= 16.0.0"
