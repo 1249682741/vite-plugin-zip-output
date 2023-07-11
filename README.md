@@ -4,7 +4,7 @@
 
 ## 使用
 ```js
-import VitePluginZip from 'vite-plugin-zip-output'
+import VitePluginZipOutput from 'vite-plugin-zip-output'
 
 export default defineConfig({
   plugins: [VitePluginZip()],
