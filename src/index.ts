@@ -1,16 +1,18 @@
 import type { Plugin, ResolvedConfig } from 'vite'
+import { normalizePath } from 'vite'
 import { resolve } from 'node:path'
 import { existsSync, unlinkSync, readdirSync, statSync, readFileSync, createWriteStream } from 'node:fs'
 // @ts-ignore
 import JSZip from 'jszip'
+import { Options } from './type'
 
-export default function VitePluginZip(): Plugin {
+export default function VitePluginZip({ zipName }: Options = {}): Plugin {
   let rootPath = ''
   let dirPath = ''
-  let zipFileName = 'dist.zip'
+  let zipFileName = ''
 
   function setZipFileName(folderName: string) {
-    zipFileName = `${folderName}.zip`
+    zipFileName = (zipName || folderName) + '.zip'
   }
 
   function setRootPath(path: string) {
@@ -82,14 +84,14 @@ export default function VitePluginZip(): Plugin {
       console.log(`>>>vite-plugin-zip: start adding the contents of the ${folderName} folder to zip`)
       addFileToZipArchive(zip, dirPath, folderName)
       await generateZipArchive(zip)
-      console.log(`>>>vite-plugin-zip: finish compress dist, ${zipFileName} written.`)
+      console.log(`>>>vite-plugin-zip: finish compress ${folderName}, ${zipFileName} written.`)
     },
     // 根据最终的vite配置获取静态文件的路径
     configResolved(resolveConfig: ResolvedConfig) {
       const { build, root } = resolveConfig
       const { outDir } = build
       setRootPath(root)
-      setDirPath(resolve(root, outDir))
+      setDirPath(normalizePath(resolve(root, outDir)))
     },
   }
 }
