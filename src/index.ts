@@ -2,7 +2,6 @@ import type { Plugin, ResolvedConfig } from 'vite'
 import { normalizePath } from 'vite'
 import { resolve } from 'node:path'
 import { existsSync, unlinkSync, readdirSync, statSync, readFileSync, createWriteStream } from 'node:fs'
-// @ts-ignore
 import JSZip from 'jszip'
 import { Options } from './type'
 

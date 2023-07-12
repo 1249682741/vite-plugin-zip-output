@@ -1,7 +1,7 @@
 import { defineConfig } from 'rollup'
 import path from 'path'
 import typescript from '@rollup/plugin-typescript'
-import { terser } from 'rollup-plugin-terser'
+import terser from '@rollup/plugin-terser'
 import babel from '@rollup/plugin-babel'
 import dts from 'rollup-plugin-dts'
 
@@ -21,11 +21,11 @@ export default defineConfig([
     plugins: [terser(), typescript(), babel()],
   },
   {
-    input: './src/type.ts',
-    plugins: [dts()],
+    input: './src/index.ts',
+    plugins: [dts.default()],
     output: {
       file: './dist/index.d.ts',
-      format: 'es',
+      format: 'esm',
     },
   },
 ])
