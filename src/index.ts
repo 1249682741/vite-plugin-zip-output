@@ -6,7 +6,7 @@ import { existsSync, unlinkSync, readdirSync, statSync, readFileSync, createWrit
 import JSZip from 'jszip'
 import { Options } from './type'
 
-export default function VitePluginZip({ zipName }: Options = {}): Plugin {
+export default function VitePluginZipOutput({ zipName }: Options = {}): Plugin {
   let rootPath = ''
   let dirPath = ''
   let zipFileName = ''
@@ -70,7 +70,7 @@ export default function VitePluginZip({ zipName }: Options = {}): Plugin {
   }
 
   return {
-    name: 'vite-plugin-zip',
+    name: 'vite-plugin-zip-output',
     apply: 'build',
     // 这里已经完成打包了。 在这里进行压缩文件
     async closeBundle() {
