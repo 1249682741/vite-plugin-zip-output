@@ -17,7 +17,6 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "tsc src/index.ts --watch",
     "build": "rollup -c"
   },
   "type": "module",
