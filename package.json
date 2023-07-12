@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-zip-output",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "a vite plugin to compress output folder to zip",
   "author": "pikachu",
   "license": "MIT",
@@ -12,7 +12,7 @@
   "module": "./dist/index.mjs",
   "exports": {
     ".": {
-      "types":"./dist/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     }
