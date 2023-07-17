@@ -32,7 +32,8 @@
     "node": "^14.18.0 || >= 16.0.0"
   },
   "dependencies": {
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "nodemailer": "^6.9.3"
   },
   "devDependencies": {
     "@babel/core": "^7.22.8",
@@ -40,6 +41,7 @@
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/node": "^20.4.1",
+    "@types/nodemailer": "^6.4.8",
     "rollup": "^3.26.2",
     "rollup-plugin-dts": "^5.3.0",
     "tslib": "^2.6.0",

@@ -4,14 +4,15 @@ import { resolve } from 'node:path'
 import { existsSync, unlinkSync, readdirSync, statSync, readFileSync, createWriteStream } from 'node:fs'
 import JSZip from 'jszip'
 import { Options } from './type'
+import Mail from './mail'
 
-export default function VitePluginZipOutput({ zipName }: Options = {}): Plugin {
+export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: false }): Plugin {
   let rootPath = ''
   let dirPath = ''
   let zipFileName = ''
 
   function setZipFileName(folderName: string) {
-    zipFileName = (zipName || folderName) + '.zip'
+    zipFileName = (opt.zipName || folderName) + '.zip'
   }
 
   function setRootPath(path: string) {
@@ -55,16 +56,50 @@ export default function VitePluginZipOutput({ zipName }: Options = {}): Plugin {
     }
   }
 
-  function generateZipArchive(zip: JSZip) {
-    const ZipPath = resolve(rootPath, `./${zipFileName}`)
+  // 删除同名zip文件， 生成zip文件
+  function generateZipArchive(zip: JSZip, path: string) {
     return new Promise<void>((resolve) => {
-      deleteFile(ZipPath)
+      deleteFile(path)
       zip
         .generateNodeStream({ streamFiles: true })
         .pipe(createWriteStream(zipFileName))
         .on('finish', () => {
           resolve()
         })
+    })
+  }
+
+  // 将压缩好的zip文件发送到邮箱 
+  function sendEmail(path: string) {
+    return new Promise(async (presolve, preject) => {
+      try {
+        console.log(`>>>vite-plugin-zip: start to send Email`)
+        const { user, pass, to } = opt
+        if (!user || !pass) {
+          throw new Error(`>>>vite-plugin-zip: when isSend is true, must set user and pass value.`)
+        }
+        const mail = new Mail({
+          user: opt.user!,
+          pass: opt.pass!,
+        })
+        const ProjectFolderName = pickFolderName(rootPath)
+        const result = await mail.send({
+          to: to || user,
+          subject: ProjectFolderName,
+          text: `Email send by VitePluginZipOutput. if you do not want to receive this email, you can set isSend: false at vite.config.js which under ${ProjectFolderName} folder`,
+          attachments: [
+            {
+              filename: zipFileName,
+              path,
+            },
+          ],
+        })
+        console.log(`>>>vite-plugin-zip: send email success`)
+        presolve(result)
+      } catch (err) {
+        console.log(err)
+        preject()
+      }
     })
   }
 
@@ -82,8 +117,12 @@ export default function VitePluginZipOutput({ zipName }: Options = {}): Plugin {
       const zip = new JSZip()
       console.log(`>>>vite-plugin-zip: start adding the contents of the ${folderName} folder to zip`)
       addFileToZipArchive(zip, dirPath, folderName)
-      await generateZipArchive(zip)
+      const ZipPath = resolve(rootPath, `./${zipFileName}`)
+      await generateZipArchive(zip, ZipPath)
       console.log(`>>>vite-plugin-zip: finish compress ${folderName}, ${zipFileName} written.`)
+      if (opt.isSend) {
+        await sendEmail(ZipPath)
+      }
     },
     // 根据最终的vite配置获取静态文件的路径
     configResolved(resolveConfig: ResolvedConfig) {
