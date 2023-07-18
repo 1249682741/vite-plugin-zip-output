@@ -1,27 +1,18 @@
 import type { Plugin, ResolvedConfig } from 'vite'
 import { normalizePath } from 'vite'
 import { resolve } from 'node:path'
-import { existsSync, unlinkSync, readdirSync, statSync, readFileSync, createWriteStream } from 'node:fs'
-import JSZip from 'jszip'
+import { existsSync, unlinkSync, } from 'node:fs'
 import { Options } from './type'
 import Mail from './mail'
+import Zip from './zip'
 
 export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: false }): Plugin {
   let rootPath = ''
-  let dirPath = ''
+  let distPath = ''
+  let distFileName = ''
+  let zipPath = ''
   let zipFileName = ''
 
-  function setZipFileName(folderName: string) {
-    zipFileName = (opt.zipName || folderName) + '.zip'
-  }
-
-  function setRootPath(path: string) {
-    rootPath = path
-  }
-
-  function setDirPath(path: string) {
-    dirPath = path
-  }
 
   // 从路径中提取最后一个文件夹
   function pickFolderName(path: string) {
@@ -36,52 +27,29 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
     }
   }
 
-  // 遍历文件夹，压入到zip中
-  function addFileToZipArchive(zip: JSZip, path: string, folderName: string) {
-    try {
-      let zipFolder = zip.folder(folderName) as JSZip
-      let fileList = readdirSync(path)
-      for (let name of fileList) {
-        let filePath = resolve(path, name)
-        if (statSync(filePath).isDirectory()) {
-          addFileToZipArchive(zipFolder, filePath, name)
-        } else {
-          zipFolder.file(name, readFileSync(filePath), {
-            date: new Date(),
-          })
-        }
-      }
-    } catch (e) {
-      console.log('addFileToZipArchive err', e)
+  // 压缩文件
+  async function zipFile() {
+    if (!existsSync(distPath)) {
+      throw new Error(`>>>vite-plugin-zip-output: not exist ${distPath}`)
     }
-  }
-
-  // 删除同名zip文件， 生成zip文件
-  function generateZipArchive(zip: JSZip, path: string) {
-    return new Promise<void>((resolve) => {
-      deleteFile(path)
-      zip
-        .generateNodeStream({ streamFiles: true })
-        .pipe(createWriteStream(zipFileName))
-        .on('finish', () => {
-          resolve()
-        })
-    })
+    console.log(`>>>vite-plugin-zip-output: start adding the contents of the ${distFileName} folder to zip`)
+    const zip = new Zip()
+    Zip.addFileToZipArchive(zip.zip, distPath, distFileName)
+    deleteFile(zipPath)
+    await zip.generateZipArchive(zipFileName)
+    console.log(`>>>vite-plugin-zip-output: finish compress ${distFileName}, ${zipFileName} written.`)
   }
 
   // 将压缩好的zip文件发送到邮箱 
   function sendEmail(path: string) {
     return new Promise(async (presolve, preject) => {
       try {
-        console.log(`>>>vite-plugin-zip: start to send Email`)
+        console.log(`>>>vite-plugin-zip-output: start to send Email`)
         const { user, pass, to } = opt
         if (!user || !pass) {
-          throw new Error(`>>>vite-plugin-zip: when isSend is true, must set user and pass value.`)
+          throw new Error(`>>>vite-plugin-zip-output: when isSend is true, must set user and pass value.`)
         }
-        const mail = new Mail({
-          user: opt.user!,
-          pass: opt.pass!,
-        })
+        const mail = new Mail(user, pass)
         const ProjectFolderName = pickFolderName(rootPath)
         const result = await mail.send({
           to: to || user,
@@ -94,7 +62,7 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
             },
           ],
         })
-        console.log(`>>>vite-plugin-zip: send email success`)
+        console.log(`>>>vite-plugin-zip-output: send email success`)
         presolve(result)
       } catch (err) {
         console.log(err)
@@ -108,28 +76,26 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
     apply: 'build',
     // 这里已经完成打包了。 在这里进行压缩文件
     async closeBundle() {
-      if (!existsSync(dirPath)) {
-        console.log(`>>>vite-plugin-zip: not exist ${dirPath}`)
-        return
-      }
-      let folderName = pickFolderName(dirPath)
-      setZipFileName(folderName)
-      const zip = new JSZip()
-      console.log(`>>>vite-plugin-zip: start adding the contents of the ${folderName} folder to zip`)
-      addFileToZipArchive(zip, dirPath, folderName)
-      const ZipPath = resolve(rootPath, `./${zipFileName}`)
-      await generateZipArchive(zip, ZipPath)
-      console.log(`>>>vite-plugin-zip: finish compress ${folderName}, ${zipFileName} written.`)
-      if (opt.isSend) {
-        await sendEmail(ZipPath)
+      try{
+        await zipFile()
+        opt.isSend && await sendEmail(zipPath)
+      } catch(err) {
+        console.log(err)
       }
     },
-    // 根据最终的vite配置获取静态文件的路径
+    // 根据最终的vite配置获取静态文件的路径, 并初始化插件要用到信息
     configResolved(resolveConfig: ResolvedConfig) {
       const { build, root } = resolveConfig
       const { outDir } = build
-      setRootPath(root)
-      setDirPath(normalizePath(resolve(root, outDir)))
+      // 根路径
+      rootPath = root
+      // 最终打包输出的文件夹路径
+      distPath = normalizePath(resolve(root, outDir))
+      // 提取打包输出的文件夹的名称
+      distFileName = pickFolderName(distPath)
+      // 根据传入的配置或输出文件夹的名称来命名压缩文件夹名称
+      zipFileName = (opt.zipName || distFileName) + '.zip'
+      zipPath = resolve(rootPath, `./${zipFileName}`)
     },
   }
 }

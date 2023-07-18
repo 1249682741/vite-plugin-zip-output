@@ -6,7 +6,7 @@ export default class user {
   pass: string
   transporter: Transporter
 
-  constructor({user, pass}: Mail) {
+  constructor(user: string, pass: string) {
     this.user = user
     this.pass = pass
     //通过账户信息创建发送渠道
