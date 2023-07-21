@@ -1,10 +1,10 @@
 import type { Plugin, ResolvedConfig } from 'vite'
 import { normalizePath } from 'vite'
 import { resolve } from 'node:path'
-import { existsSync, unlinkSync, } from 'node:fs'
+import { existsSync, unlinkSync } from 'node:fs'
 import { Options } from './type'
 import Mail from './mail'
-import Zip from './zip'
+import archiveFile from './archiveFile'
 
 export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: false }): Plugin {
   let rootPath = ''
@@ -33,10 +33,12 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
       throw new Error(`>>>vite-plugin-zip-output: not exist ${distPath}`)
     }
     console.log(`>>>vite-plugin-zip-output: start adding the contents of the ${distFileName} folder to zip`)
-    const zip = new Zip()
-    Zip.addFileToZipArchive(zip.zip, distPath, distFileName)
     deleteFile(zipPath)
-    await zip.generateZipArchive(zipFileName)
+    await archiveFile({
+      zipFileName,
+      distPath,
+      distFileName
+    })
     console.log(`>>>vite-plugin-zip-output: finish compress ${distFileName}, ${zipFileName} written.`)
   }
 
