@@ -15,6 +15,7 @@ export default defineConfig({
 |参数|类型|必填|简介|
 |--|--|--|--|
 |zipName|string|×|压缩包的名称。默认为``build.outDir``的设置的文件夹名称。|
+|destPath|false \| string |×|压缩内容存放的路径。默认使用``build.outDir``的设置的文件夹名称作为根路径（解压根据配置 ``destPath: 'dist'``生成压缩包后，文件内容包含在dist文件夹下）。若传``false``则表示无根路径（解压后的就直接就是文件内容了） 。|
 |isSend|boolean|×|压缩完成后是否以该压缩包为附件发送到邮箱。默认为``false``不发送。|
 |user|string|×|发送者的qq邮箱。当**isSend: true**的时候**必传**。|
 |pass|string|×|发送者qq邮箱的授权码。当**isSend: true**的时候**必传**。|

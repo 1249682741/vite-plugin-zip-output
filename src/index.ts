@@ -6,17 +6,23 @@ import { Options } from './type'
 import Mail from './mail'
 import archiveFile from './archiveFile'
 
-export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: false }): Plugin {
+export default function VitePluginZipOutput(options: Partial<Options>): Plugin {
   let rootPath = ''
   let distPath = ''
   let distFileName = ''
   let zipPath = ''
   let zipFileName = ''
 
+  
+  let _defaultOpt = {
+    isSend: false,
+  }
+
+  let opt = Object.assign({}, _defaultOpt, options)
 
   // 从路径中提取最后一个文件夹
   function pickFolderName(path: string) {
-    let match = path.match(/\/([^\/]*)$/)
+    let match = path.match(/([^\/]*)$/)
     return match ? match[1] : ''
   }
 
@@ -37,12 +43,12 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
     await archiveFile({
       zipFileName,
       distPath,
-      distFileName
+      destPath: typeof opt.destPath == 'undefined' ? distFileName : opt.destPath,
     })
     console.log(`>>>vite-plugin-zip-output: finish compress ${distFileName}, ${zipFileName} written.`)
   }
 
-  // 将压缩好的zip文件发送到邮箱 
+  // 将压缩好的zip文件发送到邮箱
   function sendEmail(path: string) {
     return new Promise(async (presolve, preject) => {
       try {
@@ -78,10 +84,10 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
     apply: 'build',
     // 这里已经完成打包了。 在这里进行压缩文件
     async closeBundle() {
-      try{
+      try {
         await zipFile()
-        opt.isSend && await sendEmail(zipPath)
-      } catch(err) {
+        opt.isSend && (await sendEmail(zipPath))
+      } catch (err) {
         console.log(err)
       }
     },
@@ -94,9 +100,9 @@ export default function VitePluginZipOutput(opt: Partial<Options> = { isSend: fa
       // 最终打包输出的文件夹路径
       distPath = normalizePath(resolve(root, outDir))
       // 提取打包输出的文件夹的名称
-      distFileName = pickFolderName(distPath)
+      distFileName = pickFolderName(outDir)
       // 根据传入的配置或输出文件夹的名称来命名压缩文件夹名称
-      zipFileName = (opt.zipName || distFileName) + '.zip'
+      zipFileName = (opt.zipName?.replace(/(\.zip)*$/i, '') || distFileName) + '.zip'
       zipPath = resolve(rootPath, `./${zipFileName}`)
     },
   }

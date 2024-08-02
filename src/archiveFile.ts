@@ -4,10 +4,10 @@ import archiver from 'archiver'
 interface ZipParams {
   zipFileName: string,
   distPath: string
-  distFileName: string
+  destPath: false | string 
 }
 
-export default function archiveFile({zipFileName, distPath, distFileName}: ZipParams) {
+export default function archiveFile({zipFileName, distPath, destPath}: ZipParams) {
   return new Promise((resolve, reject) => {
     
     const output = createWriteStream(zipFileName)
@@ -23,7 +23,7 @@ export default function archiveFile({zipFileName, distPath, distFileName}: ZipPa
 
     archive.pipe(output)
 
-    archive.directory(distPath, distFileName)
+    archive.directory(distPath, destPath)
 
     archive.finalize()
   })
